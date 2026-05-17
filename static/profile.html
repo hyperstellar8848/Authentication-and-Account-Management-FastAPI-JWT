@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>پروفایل من</title>
+    <style>
+        body { font-family: tahoma; background: #f4f7f6; padding: 20px; }
+        .card { background: white; max-width: 500px; margin: auto; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h2, h3 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .info-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
+        input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        button { cursor: pointer; padding: 10px 15px; border: none; border-radius: 5px; margin-top: 10px; }
+        .btn-update { background: #28a745; color: white; width: 100%; }
+        .btn-logout { background: #dc3545; color: white; float: left; }
+        .btn-pass { background: #ffc107; color: black; width: 100%; }
+        .section { margin-top: 30px; padding-top: 20px; border-top: 2px dashed #eee; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <button class="btn-logout" onclick="logout()">خروج</button>
+    <h2>پروفایل کاربری</h2>
+    
+    <div id="profile-view">
+        <div class="info-group">
+            <label>نام کاربری:</label>
+            <input type="text" id="up-username" disabled>
+        </div>
+        <div class="info-group">
+            <label>ایمیل:</label>
+            <input type="text" id="up-email" disabled>
+        </div>
+        <div class="info-group">
+            <label>نام:</label>
+            <input type="text" id="up-fname">
+        </div>
+        <div class="info-group">
+            <label>نام خانوادگی:</label>
+            <input type="text" id="up-lname">
+        </div>
+        <div class="info-group">
+            <label>بیوگرافی:</label>
+            <textarea id="up-bio"></textarea>
+        </div>
+        <button class="btn-update" onclick="updateProfile()">ویرایش اطلاعات</button>
+    </div>
+
+    <div class="section">
+        <h3>تغییر رمز عبور</h3>
+        <input type="password" id="old-pass" placeholder="رمز عبور فعلی" style="margin-bottom:10px">
+        <input type="password" id="new-pass" placeholder="رمز عبور جدید" style="margin-bottom:10px">
+        <input type="password" id="conf-pass" placeholder="تکرار رمز عبور جدید" style="margin-bottom:10px">
+        <button class="btn-pass" onclick="changePassword()">بروزرسانی رمز عبور</button>
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem('token');
+
+    // Redirect to login if no token exists
+    if (!token) {
+        window.location.href = 'index.html';
+    }
+
+    // Load User Data
+    async function loadUser() {
+        const res = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+            const user = await res.json();
+            document.getElementById('up-username').value = user.username;
+            document.getElementById('up-email').value = user.email;
+            document.getElementById('up-fname').value = user.first_name;
+            document.getElementById('up-lname').value = user.last_name;
+            document.getElementById('up-bio').value = user.bio || '';
+        } else {
+            logout();
+        }
+    }
+
+    // Update Profile Info
+    async function updateProfile() {
+        const payload = {
+            first_name: document.getElementById('up-fname').value,
+            last_name: document.getElementById('up-lname').value,
+            bio: document.getElementById('up-bio').value
+        };
+
+        const res = await fetch('/api/auth/me', {
+            method: 'PUT',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) alert("اطلاعات با موفقیت بروز شد");
+        else alert("خطا در بروزرسانی");
+    }
+
+    // Change Password
+    async function changePassword() {
+        const payload = {
+            current_password: document.getElementById('old-pass').value,
+            new_password: document.getElementById('new-pass').value,
+            new_password_confirm: document.getElementById('conf-pass').value
+        };
+
+        const res = await fetch('/api/auth/change-password', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+            alert("رمز عبور تغییر کرد");
+            location.reload();
+        } else {
+            alert("خطا: " + (data.detail || "مشکلی پیش آمد"));
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem('token');
+        window.location.href = 'index.html';
+    }
+
+    loadUser();
+</script>
+
+</body>
+</html>
