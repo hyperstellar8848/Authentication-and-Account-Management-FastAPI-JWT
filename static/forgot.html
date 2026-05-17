@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>بازیابی رمز عبور</title>
+    <style>
+        body { font-family: tahoma; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 350px; }
+        h2 { text-align: center; color: #333; }
+        p { font-size: 13px; color: #666; line-height: 1.6; }
+        input { width: 100%; padding: 12px; margin-bottom: 1rem; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-request { background-color: #007bff; color: white; }
+        .btn-reset { background-color: #28a745; color: white; }
+        .back-link { display: block; text-align: center; margin-top: 1rem; font-size: 14px; color: #007bff; text-decoration: none; }
+        .terminal-note { background: #eee; padding: 10px; border-radius: 5px; border-left: 4px solid #333; font-family: monospace; font-size: 12px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>بازیابی رمز</h2>
+
+    <!-- Step 1: Request Code -->
+    <div id="step-1">
+        <p>ایمیل خود را وارد کنید. کد ۶ رقمی در <b>ترمینال سرور (VS Code)</b> چاپ خواهد شد.</p>
+        <input type="email" id="reset-email" placeholder="ایمیل ثبت‌نام شده">
+        <button class="btn-request" onclick="requestCode()">درخواست کد بازیابی</button>
+    </div>
+
+    <!-- Step 2: Set New Password -->
+    <div id="step-2" style="display: none;">
+        <div class="terminal-note">کد را از ترمینال بردارید و اینجا وارد کنید.</div>
+        <input type="text" id="reset-code" placeholder="کد ۶ رقمی">
+        <input type="password" id="reset-new-pass" placeholder="رمز عبور جدید">
+        <input type="password" id="reset-conf-pass" placeholder="تایید رمز عبور جدید">
+        <button class="btn-reset" onclick="handleReset()">تغییر رمز عبور</button>
+    </div>
+
+    <a href="index.html" class="back-link">بازگشت به صفحه ورود</a>
+</div>
+
+<script>
+    async function requestCode() {
+        const email = document.getElementById('reset-email').value;
+        try {
+            const response = await fetch('/api/auth/forgot-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                alert("کد ارسال شد! لطفاً ترمینال سرور را چک کنید.");
+                document.getElementById('step-1').style.display = 'none';
+                document.getElementById('step-2').style.display = 'block';
+            } else {
+                alert("خطا: " + (data.detail || "ایمیل یافت نشد"));
+            }
+        } catch (err) {
+            alert("خطا در ارتباط با سرور");
+        }
+    }
+
+    async function handleReset() {
+        const payload = {
+            email: document.getElementById('reset-email').value,
+            code: document.getElementById('reset-code').value,
+            new_password: document.getElementById('reset-new-pass').value,
+            new_password_confirm: document.getElementById('reset-conf-pass').value
+        };
+
+        try {
+            const response = await fetch('/api/auth/password-reset', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                alert("رمز عبور با موفقیت تغییر کرد. اکنون می‌توانید وارد شوید.");
+                window.location.href = 'index.html';
+            } else {
+                alert("خطا: " + (data.detail || "کد اشتباه است یا رمزها مطابقت ندارند"));
+            }
+        } catch (err) {
+            alert("خطا در ارسال اطلاعات");
+        }
+    }
+</script>
+
+</body>
+</html>
