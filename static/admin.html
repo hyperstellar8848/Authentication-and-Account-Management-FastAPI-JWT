@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>پنل مدیریت</title>
+    <style>
+        body { font-family: tahoma; background: #e9ecef; padding: 20px; }
+        .container { background: white; max-width: 900px; margin: auto; padding: 20px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+        h2 { color: #333; text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+        th { background-color: #007bff; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        .btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin: 2px; }
+        .btn-toggle { background: #6c757d; color: white; }
+        .btn-edit { background: #ffc107; color: black; }
+        .status-active { color: green; font-weight: bold; }
+        .status-inactive { color: red; font-weight: bold; }
+        .back-btn { background: #343a40; color: white; padding: 10px; text-decoration: none; border-radius: 5px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="profile.html" class="back-btn">بازگشت به پروفایل</a>
+    <h2>مدیریت کاربران (ادمین)</h2>
+    
+    <table id="user-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>نام کاربری</th>
+                <th>ایمیل</th>
+                <th>نام و نام خانوادگی</th>
+                <th>وضعیت</th>
+                <th>عملیات</th>
+            </tr>
+        </thead>
+        <tbody id="user-list">
+            <!-- Users will be loaded here -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    const token = localStorage.getItem('token');
+
+    async function loadUsers() {
+        const res = await fetch('/api/admin/users', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (res.status === 403) {
+            alert("دسترسی غیرمجاز! شما ادمین نیستید.");
+            window.location.href = 'profile.html';
+            return;
+        }
+
+        const users = await res.json();
+        const list = document.getElementById('user-list');
+        list.innerHTML = '';
+
+        users.forEach(user => {
+            list.innerHTML += `
+                <tr>
+                    <td>${user.id}</td>
+                    <td>${user.username}</td>
+                    <td>${user.email}</td>
+                    <td>${user.first_name} ${user.last_name}</td>
+                    <td class="${user.is_active ? 'status-active' : 'status-inactive'}">
+                        ${user.is_active ? 'فعال' : 'غیرفعال'}
+                    </td>
+                    <td>
+                        <button class="btn btn-toggle" onclick="toggleUser(${user.id})">تغییر وضعیت</button>
+                        <button class="btn btn-edit" onclick="editUserPrompt(${user.id})">ویرایش</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    async function toggleUser(id) {
+        const res = await fetch(`/api/admin/users/${id}/toggle-active`, {
+            method: 'PATCH',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) loadUsers();
+    }
+
+    async function editUserPrompt(id) {
+        const newFName = prompt("نام جدید:");
+        const newLName = prompt("نام خانوادگی جدید:");
+        
+        if (newFName && newLName) {
+            const res = await fetch(`/api/admin/users/${id}`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({ first_name: newFName, last_name: newLName })
+            });
+            if (res.ok) loadUsers();
+        }
+    }
+
+    loadUsers();
+</script>
+
+</body>
+</html>
