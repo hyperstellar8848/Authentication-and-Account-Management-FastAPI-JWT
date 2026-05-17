@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ورود و ثبت‌نام</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 350px; }
+        h2 { text-align: center; color: #1c1e21; margin-bottom: 1.5rem; }
+        input { width: 100%; padding: 12px; margin-bottom: 1rem; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        button:hover { background-color: #0056b3; }
+        .toggle-link { text-align: center; margin-top: 1rem; font-size: 14px; color: #007bff; cursor: pointer; }
+        .forgot-link { display: block; text-align: center; margin-top: 0.5rem; font-size: 13px; color: #666; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Login Form -->
+    <div id="login-form">
+        <h2>ورود به سیستم</h2>
+        <input type="text" id="login-username" placeholder="نام کاربری">
+        <input type="password" id="login-password" placeholder="رمز عبور">
+        <button onclick="handleLogin()">ورود</button>
+        <div class="toggle-link" onclick="toggleForms()">حساب ندارید؟ ثبت‌نام کنید</div>
+        <a href="forgot.html" class="forgot-link">رمز عبور را فراموش کرده‌اید؟</a>
+    </div>
+
+    <!-- Registration Form -->
+    <div id="register-form" style="display: none;">
+        <h2>ثبت‌نام</h2>
+        <input type="text" id="reg-username" placeholder="نام کاربری">
+        <input type="email" id="reg-email" placeholder="ایمیل">
+        <input type="text" id="reg-fname" placeholder="نام">
+        <input type="text" id="reg-lname" placeholder="نام خانوادگی">
+        <input type="password" id="reg-password" placeholder="رمز عبور (حداقل ۸ کاراکتر)">
+        <input type="password" id="reg-confirm" placeholder="تایید رمز عبور">
+        <button onclick="handleRegister()">ثبت‌نام</button>
+        <div class="toggle-link" onclick="toggleForms()">قبلاً ثبت‌نام کرده‌اید؟ وارد شوید</div>
+    </div>
+</div>
+
+<script>
+    function toggleForms() {
+        const login = document.getElementById('login-form');
+        const register = document.getElementById('register-form');
+        login.style.display = login.style.display === 'none' ? 'block' : 'none';
+        register.style.display = register.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function handleLogin() {
+        const username = document.getElementById('login-username').value;
+        const password = document.getElementById('login-password').value;
+
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                localStorage.setItem('token', data.access_token);
+                alert("ورود موفقیت‌آمیز بود!");
+                window.location.href = 'profile.html';
+            } else {
+                alert("خطا: " + (data.detail || "نام کاربری یا رمز عبور اشتباه است"));
+            }
+        } catch (err) {
+            alert("خطا در برقراری ارتباط با سرور");
+        }
+    }
+
+    async function handleRegister() {
+        const payload = {
+            username: document.getElementById('reg-username').value,
+            email: document.getElementById('reg-email').value,
+            first_name: document.getElementById('reg-fname').value,
+            last_name: document.getElementById('reg-lname').value,
+            password: document.getElementById('reg-password').value,
+            password_confirm: document.getElementById('reg-confirm').value
+        };
+
+        try {
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                alert("ثبت‌نام موفقیت‌آمیز! حالا وارد شوید.");
+                toggleForms();
+            } else {
+                alert("خطا: " + JSON.stringify(data.detail));
+            }
+        } catch (err) {
+            alert("خطا در ارسال اطلاعات");
+        }
+    }
+</script>
+
+</body>
+</html>
